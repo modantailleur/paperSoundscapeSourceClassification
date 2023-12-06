@@ -1,0 +1,21 @@
+#dataset exclusion
+GRAFIC_DATASET/Enregistrements_Mobiles_Paris_4x19pts/
+GRAFIC_DATASET/OUT/
+GRAFIC_DATASET/
+AUMILAB_DATASET/audios/
+AUMILAB_DATASET/audios-reshape/
+SINGAPURA_DATASET/labelled/
+SINGAPURA_DATASET/labelled-reshape/
+
+0-archive/
+doce_outputs/
+pann_outputs/
+yamnet_outputs/
+tfsd_outputs/
+results/
+pann/Cnn14_DecisionLevelMax_mAP=0.385.pth
+pann/ResNet38_mAP=0.434.pth
+yamnet/yamnet.h5
+yamnet/yamnet.pth
+felix/
+cense_exp/

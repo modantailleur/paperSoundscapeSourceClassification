@@ -1,0 +1,3 @@
+[submodule "censeModels"]
+	path = censeModels
+	url = git@github.com:modantailleur/censeModels.git
