@@ -112,7 +112,7 @@ python3 cense_create_jasa_figures.py --desc church
 
 ```
 
-## Diverse
+## DIVERSE
 
 To generate the spectrogram:
 
