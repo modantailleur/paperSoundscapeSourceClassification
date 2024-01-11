@@ -191,6 +191,7 @@ def pick_random_samples(start_date, end_date, sensors=["p0720", "p0310", 'p0640'
     weekend_list = []
     night_list = []
     laeq_list = []
+    leq_list = []
     just_before_sunrise_list = []
     raining_list = []
     h5_list = []
@@ -258,7 +259,8 @@ def pick_random_samples(start_date, end_date, sensors=["p0720", "p0310", 'p0640'
 
                                 spectral_data = df_date.iloc[: , 1:-3].to_numpy()
                                 laeq = df_date.iloc[: , -2:-1].to_numpy()[:,0]
-                            
+                                leq = df_date.iloc[: , -3:-2].to_numpy()[:,0]
+
                                 if spectral_data.shape[0] != 480:
                                     print('FAIL: too few spectral data, continuing')
                                     failures += 1
@@ -280,6 +282,7 @@ def pick_random_samples(start_date, end_date, sensors=["p0720", "p0310", 'p0640'
                                 raining_list.append(info.raining)
                                 spectral_data_list.append(spectral_data)
                                 laeq_list.append(np.mean(laeq))
+                                leq_list.append(np.mean(leq))
 
                                 idx_spec_to_save += 1
 
@@ -295,7 +298,8 @@ def pick_random_samples(start_date, end_date, sensors=["p0720", "p0310", 'p0640'
 
                                     spectral_data = df_date.iloc[: , 1:-3].to_numpy()
                                     laeq = df_date.iloc[: , -2:-1].to_numpy()[:,0]
-                                
+                                    leq = df_date.iloc[: , -3:-2].to_numpy()[:,0]
+
                                     if spectral_data.shape[0] != 480:
                                         print('FAIL: too few spectral data, continuing')
                                         failures += 1
@@ -317,6 +321,7 @@ def pick_random_samples(start_date, end_date, sensors=["p0720", "p0310", 'p0640'
                                     raining_list.append(info.raining)
                                     spectral_data_list.append(spectral_data)
                                     laeq_list.append(np.mean(laeq))
+                                    leq_list.append(np.mean(leq))
 
                                     idx_spec_to_save += 1
 
@@ -340,6 +345,7 @@ def pick_random_samples(start_date, end_date, sensors=["p0720", "p0310", 'p0640'
         'just_before_sunrise': just_before_sunrise_list,
         'raining': raining_list,
         'laeq': laeq_list,
+        'leq': leq_list,
         'spectral_data': np.array(spectral_data_list)
     }
 

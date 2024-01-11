@@ -315,9 +315,9 @@ class ThirdOctaveTransform():
         # db_delta is related the the sensitivity of the microphone. For cense, the
         # sensitivity is -26dB, so the db_delta is 26 (to add 26dB) to the given
         # calculated value.
-        # This is actually a mistake tu put it there, because the model becomes microphone dependant. Unfortunately, the CNN model has been trained
+        # This is actually a mistake tu put it there. Unfortunately, the CNN model has been trained
         # with it for the Dcase paper: https://hal.science/hal-04178197v2/file/DCASE_2023___spectral_transcoder_camera_ready_14082023.pdf .
-        # What is done is thus -94dB-26dB+sensitivity for other datasets (or +db_compensation to readjust the overall level)
+        # This db_delta thus needs to be compensated on real third-octave recorded datasets when feeding the transcoder model with third-octaves.
         self.db_delta = 26
 
         #just to contrast with the other third-octave transform

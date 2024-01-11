@@ -43,15 +43,15 @@ import librosa
 #############################
 
 class TFSDInference():
-    def __init__(self, db_compensation=0):
+    def __init__(self, db_offset=0):
         self.labels_str = ['L50', 'TFSD5001s', 'TFSD4000125ms']
         self.n_labels = 3
-        self.db_compensation = db_compensation
-        self.db_compensation_multiplier = 10**(db_compensation/10)
+        self.db_offset = db_offset
+        self.db_offset_multiplier = 10**(db_offset/10)
 
     def inference_from_scratch(self, file_name):
         s, fs = librosa.load(file_name, sr=32000)
-        s = s*self.db_compensation_multiplier
+        s = s*self.db_offset_multiplier
 
         #traffic
         rmse = librosa.feature.rms(y=s, frame_length=fs//8, hop_length=512)

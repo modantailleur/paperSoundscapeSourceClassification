@@ -35,7 +35,7 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed(0)
 
 class YamNetInference():
-    def __init__(self, device=torch.device("cpu"), verbose=True, normalize=True, db_compensation=0):
+    def __init__(self, device=torch.device("cpu"), verbose=True, normalize=True, db_offset=0):
         self.n_labels = 521
 
         model_path = "./reference_models"
@@ -46,13 +46,13 @@ class YamNetInference():
         self.transcoder_deep_yamnet = ThirdOctaveToMelTranscoder(model_type, cnn_yamnet_name, model_path, device)
         self.normalize = normalize
         self.verbose = verbose
-        self.db_compensation = db_compensation
-        self.db_compensation_multiplier = 10**(db_compensation/10)
+        self.db_offset = db_offset
+        self.db_offset_multiplier = 10**(db_offset/10)
 
     def inference_from_scratch(self, file_name, mean=True):
         x_16k = librosa.load(file_name, sr=16000)[0]
-        if (self.db_compensation is not None) and (self.normalize == False):
-            x_16k = x_16k * self.db_compensation_multiplier
+        if (self.db_offset is not None) and (self.normalize == False):
+            x_16k = x_16k * self.db_offset_multiplier
         if self.normalize:
             x_16k = librosa.util.normalize(x_16k)
 
@@ -98,7 +98,7 @@ class TrYamNetInference():
         return(x_logit_yamnet_cnn)
 
 class PANNInference():
-    def __init__(self, device=torch.device("cpu"), verbose=False, constant_10s_audio=False, normalize=True, db_compensation=0, pann_type='ResNet38'):
+    def __init__(self, device=torch.device("cpu"), verbose=False, constant_10s_audio=False, normalize=True, db_offset=0, pann_type='ResNet38'):
         self.n_labels = 527
 
         model_path = "./reference_models"
@@ -110,13 +110,13 @@ class PANNInference():
         self.transcoder_deep_pann = ThirdOctaveToMelTranscoder(model_type, cnn_pann_name, model_path, device, pann_type=pann_type)
         self.constant_10s_audio = constant_10s_audio
         self.normalize = normalize
-        self.db_compensation = db_compensation
-        self.db_compensation_multiplier = 10**(db_compensation/10)
+        self.db_offset = db_offset
+        self.db_offset_multiplier = 10**(db_offset/10)
 
     def inference_from_scratch(self, file_name, mean=True, to_tvb=False):
         x_32k = librosa.load(file_name, sr=32000)[0]
-        if (self.db_compensation is not None) and (self.normalize == False):
-            x_32k = x_32k * self.db_compensation_multiplier
+        if (self.db_offset is not None) and (self.normalize == False):
+            x_32k = x_32k * self.db_offset_multiplier
         if self.normalize:
             x_32k = librosa.util.normalize(x_32k)
 
@@ -151,7 +151,7 @@ class PANNInference():
         return(x_logit_pann_gt)
 
 class TrPANNInference():
-    def __init__(self, device=torch.device("cpu"), verbose=False, constant_10s_audio=False, normalize=True, db_compensation=0, pann_type='ResNet38'):
+    def __init__(self, device=torch.device("cpu"), verbose=False, constant_10s_audio=False, normalize=True, db_offset=0, pann_type='ResNet38'):
         self.n_labels = 527
 
         model_path = "./reference_models"
@@ -164,13 +164,13 @@ class TrPANNInference():
         self.normalize = normalize
 
         self.verbose = verbose
-        self.db_compensation = db_compensation
-        self.db_compensation_multiplier = 10**(db_compensation/20)
+        self.db_offset = db_offset
+        self.db_offset_multiplier = 10**(db_offset/20)
 
     def inference_from_scratch(self, file_name, mean=True, to_tvb=False):
         x_32k = librosa.load(file_name, sr=32000)[0]
-        if (self.db_compensation is not None) and (self.normalize == False):
-            x_32k = x_32k * self.db_compensation_multiplier
+        if (self.db_offset is not None) and (self.normalize == False):
+            x_32k = x_32k * self.db_offset_multiplier
 
         if self.normalize:
             x_32k = librosa.util.normalize(x_32k)
@@ -187,8 +187,8 @@ class TrPANNInference():
             x_logit_pann_cnn = self.transcoder_deep_pann.mels_to_logit(x_mels_pann_cnn, mean=mean)
             x_logit_pann_cnn = x_logit_pann_cnn.T
 
-            # if (self.db_compensation is not None) and (self.normalize == False):
-            #     x_mels_pann_cnn = x_mels_pann_cnn + self.db_compensation
+            # if (self.db_offset is not None) and (self.normalize == False):
+            #     x_mels_pann_cnn = x_mels_pann_cnn + self.db_offset
 
             #MT: removed
             # x_logit_pann_cnn = np.mean(x_logit_pann_cnn, axis=1)
@@ -208,7 +208,7 @@ class TrPANNInference():
         return(x_logit_pann_cnn)
 
 class TrPANNInferenceSlow():
-    def __init__(self, device=torch.device("cpu"), verbose=False, constant_10s_audio=False, normalize=True, db_compensation=0):
+    def __init__(self, device=torch.device("cpu"), verbose=False, constant_10s_audio=False, normalize=True, db_offset=0):
         self.n_labels = 527
 
         model_path = "./reference_models"
@@ -221,27 +221,27 @@ class TrPANNInferenceSlow():
         self.normalize = normalize
 
         self.verbose = verbose
-        self.db_compensation = db_compensation
-        self.db_compensation_multiplier = 10**(db_compensation/10)
+        self.db_offset = db_offset
+        self.db_offset_multiplier = 10**(db_offset/10)
 
     def inference_from_scratch(self, file_name):
         x_32k = librosa.load(file_name, sr=32000)[0]
-        if (self.db_compensation is not None) and (self.normalize == False):
-            x_32k = x_32k * self.db_compensation_multiplier
+        if (self.db_offset is not None) and (self.normalize == False):
+            x_32k = x_32k * self.db_offset_multiplier
 
         if self.normalize:
             x_32k = librosa.util.normalize(x_32k)
 
         if self.constant_10s_audio:
             x_mels_pann_cnn = self.transcoder_deep_pann.transcode_from_wav_entire_file(x_32k)
-            # if (self.db_compensation is not None) and (self.normalize == False):
-            #     x_mels_pann_cnn = x_mels_pann_cnn + self.db_compensation
+            # if (self.db_offset is not None) and (self.normalize == False):
+            #     x_mels_pann_cnn = x_mels_pann_cnn + self.db_offset
             x_logit_pann_cnn = self.transcoder_deep_pann.mels_to_logit(x_mels_pann_cnn, slice=False)
             x_logit_pann_cnn = x_logit_pann_cnn.reshape(1, -1)
         else:
             x_mels_pann_cnn, x_logit_pann_cnn = self.transcoder_deep_pann.transcode_from_wav(x_32k, frame_duration=10)
-            # if (self.db_compensation is not None) and (self.normalize == False):
-            #     x_mels_pann_cnn = x_mels_pann_cnn + self.db_compensation
+            # if (self.db_offset is not None) and (self.normalize == False):
+            #     x_mels_pann_cnn = x_mels_pann_cnn + self.db_offset
             x_logit_pann_cnn = np.mean(x_logit_pann_cnn, axis=1)
             x_logit_pann_cnn = x_logit_pann_cnn.reshape(1, -1)
 

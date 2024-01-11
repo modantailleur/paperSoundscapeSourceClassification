@@ -91,8 +91,8 @@ python3 cense_pick_random_samples.py --desc church_functional
 python3 cense_pick_random_samples.py --desc church_not_functional
 ```
 
-Then, run the following code to compute PANN-1/3oct on the subsets. The db_compensation is set to -94+32 because the THRESHOLD calculated for winter2020 is -32. Please check if this THRESHOLD
-is indeed close to -32 (printed in terminal) when running the code for winter2020 before going further. 
+Then, run the following code to compute PANN-1/3oct on the subsets. The db_offset is set to -88, calculated on winter2020 dataset, in order 
+to get dBFS from the cense sensors. Please check if this db_offset is close to -88 (printed in terminal) when running the code for winter2020 before going further (2 or 3 dB of difference is fine). 
 ```
 python3 cense_compute_classifier.py --desc winter2020
 python3 cense_compute_classifier.py --desc winter2020-3s

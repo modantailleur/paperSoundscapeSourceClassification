@@ -16,6 +16,8 @@ class DatasetGenerator(object):
             self.data_dict = pickle.load(pickle_file)
         self.spectral_data = self.data_dict['spectral_data']
         self.laeq = self.data_dict['laeq']
+        if "leq" in self.data_dict:
+            self.leq = self.data_dict['leq']
         data_dict_without_spectral = {key: value for key, value in self.data_dict.items() if key != 'spectral_data'}
         self.df = pd.DataFrame(data_dict_without_spectral)
         self.len_dataset = len(self.spectral_data)
@@ -30,11 +32,11 @@ class DatasetGenerator(object):
 
 #for CNN + PINV
 class TranscoderPANNEvaluater:
-    def __init__(self, transcoder, eval_dataset, dtype=torch.FloatTensor, db_compensation=-94):
+    def __init__(self, transcoder, eval_dataset, dtype=torch.FloatTensor, db_offset=-94):
         self.dtype = dtype
         self.transcoder = transcoder
         self.eval_dataset = eval_dataset
-        self.db_compensation = db_compensation
+        self.db_offset = db_offset
 
     def evaluate(self, batch_size=32, device=torch.device("cpu")):
                 
@@ -47,7 +49,10 @@ class TranscoderPANNEvaluater:
             spectral_data = spectral_data.type(self.dtype)
             spectral_data = spectral_data.to(device)
             
-            spectral_data = spectral_data + self.db_compensation
+            #The +26dB offset is due to the fact that the transcoder was not trained on dBFS but on dBFS + 26dB. This is 
+            #a bug in the training of the model but it doesn't affect the results as long as we make sure that the transcoder
+            #takes dBFS + 26dB as input
+            spectral_data = spectral_data + self.db_offset + 26
             _ , presence = self.transcoder.thirdo_to_mels_to_logit(spectral_data, frame_duration=10)
 
             presence = torch.mean(presence, axis=-1)
@@ -60,10 +65,10 @@ class TranscoderPANNEvaluater:
 
 #for acoustic indicators (laeq, )
 class AcousticEvaluater:
-    def __init__(self, eval_dataset, dtype=torch.FloatTensor, db_compensation=-94):
+    def __init__(self, eval_dataset, dtype=torch.FloatTensor, db_offset=-94):
         self.dtype = dtype
         self.eval_dataset = eval_dataset
-        self.db_compensation = db_compensation
+        self.db_offset = db_offset
         self.fn=np.array([20, 25, 31, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000, 12500])
 
     def evaluate(self, batch_size=1, device=torch.device("cpu")):
@@ -77,7 +82,7 @@ class AcousticEvaluater:
             spectral_data = spectral_data.type(self.dtype)
             spectral_data = spectral_data.to(device)
             
-            spectral_data = spectral_data + self.db_compensation
+            spectral_data = spectral_data + self.db_offset
 
             spectral_data = spectral_data.detach().cpu().numpy()
 
@@ -127,10 +132,10 @@ class FelixEvaluater:
         return(eval_outputs)
 
 class LevelEvaluater:
-    def __init__(self, eval_dataset, dtype=torch.FloatTensor, db_compensation=-94):
+    def __init__(self, eval_dataset, dtype=torch.FloatTensor, db_offset=-94):
         self.dtype = dtype
         self.eval_dataset = eval_dataset
-        self.db_compensation = db_compensation
+        self.db_offset = db_offset
         self.fn=np.array([20, 25, 31, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000, 12500])
 
     def evaluate(self, batch_size=1, device=torch.device("cpu")):
@@ -140,29 +145,34 @@ class LevelEvaluater:
         
         eval_outputs = np.array([])
 
-        for (spectral_data, _) in tqdm_it:
+        for (spectral_data, laeq) in tqdm_it:
             spectral_data = spectral_data.type(self.dtype)
             spectral_data = spectral_data.to(device)
-            
-            spectral_data = torch.mean(spectral_data, axis=-1)
+            laeq = laeq.type(self.dtype)
+            laeq = laeq.to(device)
+
+            puiss_spectral_data = 10**(spectral_data/10)
+            sum_puiss_spectral_data = torch.sum(puiss_spectral_data, axis=-1)
+            level_spectral_data = 10*torch.log10(sum_puiss_spectral_data)
+            level_spectral_data = level_spectral_data.view(-1)
 
             # presence = inference_tfsd(spectral_data=spectral_data, batch_size=480)
             # presence[:, 0] = laeq
             # presence = presence.mean(axis=0)
             
             if len(eval_outputs) != 0:
-                eval_outputs = torch.cat((eval_outputs, spectral_data), dim=0)
+                eval_outputs = torch.cat((eval_outputs, level_spectral_data), dim=0)
             else:
-                eval_outputs = spectral_data
+                eval_outputs = level_spectral_data
                         
         eval_outputs = eval_outputs.detach().cpu().numpy()
         return(eval_outputs)
 
 def main(config):
 
-    # The +26dB linked to the microphone sensitivity is already taken into account by the transcoder model (this is actually a bug, to be fixed in futur versions)
-    # +32dB is the result of the db compensation calculation on winter2020 subset (see paper for more details).
-    db_compensation = -94 + 32
+    # The -88dB is the result of the db compensation calculation on winter2020 subset (see paper for more details), to go from cense 
+    # measurement to dBFS.
+    db_offset = -88
     if config.desc == 'test':
         # data used for the traffic, voices and birds map
         start_date = "202011"
@@ -219,11 +229,11 @@ def main(config):
         n_file = 16456
         cet_date = False
     
-    compute_predictions(classifier='level', sensors=sensors, db_compensation=db_compensation, start_date=start_date, end_date=end_date, n_file=n_file, output_path=config.output_path, spectral_path=config.spectral_path)
-    compute_predictions(classifier='transcoder', sensors=sensors, db_compensation=db_compensation, start_date=start_date, end_date=end_date, n_file=n_file, output_path=config.output_path, spectral_path=config.spectral_path)
-    # compute_predictions(classifier='acoustic', sensors=sensors, db_compensation=db_compensation, start_date=start_date, end_date=end_date, n_file=n_file, output_path=config.output_path, spectral_path=config.spectral_path)
+    compute_predictions(classifier='level', sensors=sensors, db_offset=db_offset, start_date=start_date, end_date=end_date, n_file=n_file, output_path=config.output_path, spectral_path=config.spectral_path)
+    compute_predictions(classifier='transcoder', sensors=sensors, db_offset=db_offset, start_date=start_date, end_date=end_date, n_file=n_file, output_path=config.output_path, spectral_path=config.spectral_path)
+    # compute_predictions(classifier='acoustic', sensors=sensors, db_offset=db_offset, start_date=start_date, end_date=end_date, n_file=n_file, output_path=config.output_path, spectral_path=config.spectral_path)
 
-def compute_predictions(classifier, sensors, db_compensation, start_date, end_date, n_file, output_path, spectral_path):
+def compute_predictions(classifier, sensors, db_offset, start_date, end_date, n_file, output_path, spectral_path):
 
     #transcoder setup
     MODEL_PATH = "./reference_models"
@@ -261,10 +271,10 @@ def compute_predictions(classifier, sensors, db_compensation, start_date, end_da
 
     if classifier == 'transcoder':
         transcoder_cnn_logits_pann = ThirdOctaveToMelTranscoder(transcoder, cnn_logits_name, MODEL_PATH, device=device)
-        evaluater = TranscoderPANNEvaluater(transcoder=transcoder_cnn_logits_pann, eval_dataset=dataset, db_compensation=db_compensation)
+        evaluater = TranscoderPANNEvaluater(transcoder=transcoder_cnn_logits_pann, eval_dataset=dataset, db_offset=db_offset)
 
     if classifier == 'acoustic':
-        evaluater = AcousticEvaluater(eval_dataset=dataset, db_compensation=0)
+        evaluater = AcousticEvaluater(eval_dataset=dataset, db_offset=0)
         batch_size = 1
 
     if classifier == 'felix':
@@ -273,7 +283,7 @@ def compute_predictions(classifier, sensors, db_compensation, start_date, end_da
         batch_size = 1
 
     if classifier == 'level':
-        evaluater = LevelEvaluater(eval_dataset=dataset, db_compensation=-94+26)
+        evaluater = LevelEvaluater(eval_dataset=dataset, db_offset=-94+26)
         batch_size = 1
 
     eval_outputs = evaluater.evaluate(batch_size=batch_size, device=device)
@@ -292,10 +302,10 @@ def compute_predictions(classifier, sensors, db_compensation, start_date, end_da
         df_to_save = pd.concat([df_to_save, classes_df], axis=1)
 
         if sensors == 'all':
-            df_to_save.to_pickle(output_path + 'cense_lorient_'+classifier+'_with_'+str(n_file)+'_files_'+'dbcompensation_'+str(db_compensation)+'_all_sensors_start_'+ start_date + '_end_' + end_date)
+            df_to_save.to_pickle(output_path + 'cense_lorient_'+classifier+'_with_'+str(n_file)+'_files_'+'dbcompensation_'+str(db_offset)+'_all_sensors_start_'+ start_date + '_end_' + end_date)
         else:
             sensors_str = '_'.join(sensors)
-            df_to_save.to_pickle(output_path + 'cense_lorient_'+classifier+'_with_'+str(n_file)+'_files_'+'dbcompensation_'+str(db_compensation)+'__'+ sensors_str + '__' + 'start_'+ start_date + '_end_' + end_date)
+            df_to_save.to_pickle(output_path + 'cense_lorient_'+classifier+'_with_'+str(n_file)+'_files_'+'dbcompensation_'+str(db_offset)+'__'+ sensors_str + '__' + 'start_'+ start_date + '_end_' + end_date)
 
     else:
         eval_outputs = eval_outputs.reshape(-1)

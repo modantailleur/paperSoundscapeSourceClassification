@@ -112,10 +112,10 @@ def preprocess_df(df, t_class, v_class, b_class, t_coef, v_coef, b_coef, keep_on
     return(df)
 
 
-def get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_classes=['C_300', 'C_0', 'C_112'], sensors=["p0640", "p0310", "p0720"], pred_path = "./cense_exp/", keep_only_tvb=True):
+def get_df(n_files, time_start, time_end, db_offset, all_sensors, tvb_classes=['C_300', 'C_0', 'C_112'], sensors=["p0640", "p0310", "p0720"], pred_path = "./cense_exp/", keep_only_tvb=True):
     if all_sensors:
-        df_transcoder = pd.read_pickle(pred_path+'cense_lorient_transcoder_with_'+str(n_files)+'_files_dbcompensation_'+str(db_compensation)+'_all_sensors_start_'+time_start+'_end_'+time_end)
-        acoustic_path = pred_path+'cense_lorient_acoustic_with_'+str(n_files)+'_files_dbcompensation_'+str(db_compensation)+'_all_sensors_start_'+time_start+'_end_'+time_end
+        df_transcoder = pd.read_pickle(pred_path+'cense_lorient_transcoder_with_'+str(n_files)+'_files_dbcompensation_'+str(db_offset)+'_all_sensors_start_'+time_start+'_end_'+time_end)
+        acoustic_path = pred_path+'cense_lorient_acoustic_with_'+str(n_files)+'_files_dbcompensation_'+str(db_offset)+'_all_sensors_start_'+time_start+'_end_'+time_end
         if os.path.exists(acoustic_path):
             df_acoustic = pd.read_pickle(acoustic_path)
         else:
@@ -127,13 +127,13 @@ def get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_clas
                 df_acoustic = df_acoustic[df_acoustic['id_sensor'].isin(sensors)]
     else:
         sensors_str = '_'.join(sensors)
-        df_transcoder = pd.read_pickle(pred_path+'cense_lorient_transcoder_with_'+str(n_files)+'_files_dbcompensation_'+str(db_compensation)+'__' + sensors_str +'__'+'start_'+time_start+'_end_'+time_end)
-        acoustic_path = pred_path+'cense_lorient_acoustic_with_'+str(n_files)+'_files_dbcompensation_'+str(db_compensation)+'__' + sensors_str +'__'+'start_'+time_start+'_end_'+time_end
+        df_transcoder = pd.read_pickle(pred_path+'cense_lorient_transcoder_with_'+str(n_files)+'_files_dbcompensation_'+str(db_offset)+'__' + sensors_str +'__'+'start_'+time_start+'_end_'+time_end)
+        acoustic_path = pred_path+'cense_lorient_acoustic_with_'+str(n_files)+'_files_dbcompensation_'+str(db_offset)+'__' + sensors_str +'__'+'start_'+time_start+'_end_'+time_end
         if os.path.exists(acoustic_path):
             df_acoustic = pd.read_pickle()
         else:
             df_acoustic = None       
-        felix_path = pred_path+'cense_lorient_felix_with_'+str(n_files)+'_files_dbcompensation_'+str(db_compensation)+'__' + sensors_str +'__'+'start_'+time_start+'_end_'+time_end
+        felix_path = pred_path+'cense_lorient_felix_with_'+str(n_files)+'_files_dbcompensation_'+str(db_offset)+'__' + sensors_str +'__'+'start_'+time_start+'_end_'+time_end
         if os.path.exists(felix_path):
             df_felix = pd.read_pickle(felix_path)
         else:
@@ -164,7 +164,7 @@ def get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_clas
                 b_coef=1,
                 keep_only_tvb=keep_only_tvb)
     
-    if db_compensation == -74:
+    if db_offset == -100:
         df = preprocess_df(df=df_transcoder,
                     t_class=tvb_classes[0],
                     v_class=tvb_classes[1],
@@ -174,7 +174,7 @@ def get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_clas
                     b_coef=9.21451585,
                     keep_only_tvb=keep_only_tvb)
 
-    if db_compensation == -62:
+    if db_offset == -88:
         df = preprocess_df(df=df_transcoder,
                     t_class=tvb_classes[0],
                     v_class=tvb_classes[1],
@@ -440,8 +440,8 @@ def main(config):
         n_files = 32312
         time_start = '202011'
         time_end = '202031'
-        # db_compensation = -94+40
-        db_compensation = -94+32
+        # db_offset = -94+40
+        db_offset = -88
         all_sensors = False
 
         # sensors ids
@@ -454,7 +454,7 @@ def main(config):
         sensor_ped = "p0310"
         sensor_traf = "p0160"
 
-        df_a_3s, df_f_3s, df_3s = get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=[sensor_res, sensor_ped, sensor_traf], pred_path=config.pred_path)
+        df_a_3s, df_f_3s, df_3s = get_df(n_files, time_start, time_end, db_offset, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=[sensor_res, sensor_ped, sensor_traf], pred_path=config.pred_path)
 
         df_3s_traf = df_3s[df_3s['id_sensor'] == sensor_traf]
         df_3s_ped = df_3s[df_3s['id_sensor'] == sensor_ped]
@@ -475,12 +475,12 @@ def main(config):
         n_files = 33443
         time_start = '202011'
         time_end = '202031'
-        # db_compensation = -94+40
-        # db_compensation = -94+20
-        db_compensation = -94+32
+        # db_offset = -94+40
+        # db_offset = -94+20
+        db_offset = -88
         all_sensors = True
 
-        df_a, df_f, df = get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=None, pred_path=config.pred_path)
+        df_a, df_f, df = get_df(n_files, time_start, time_end, db_offset, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=None, pred_path=config.pred_path)
 
         df_map_general = get_df_for_map(df=df, tvb_classes=[t_class, v_class, b_class])
         df_map_nl = get_df_for_map(df=df, tvb_classes=[t_class, v_class, b_class], temporality="night life")
@@ -512,8 +512,8 @@ def main(config):
         # n_files = 8234
         # time_start = '2021725'
         # time_end = '2021726'
-        # # db_compensation = -94+40
-        # db_compensation = -94+32
+        # # db_offset = -94+40
+        # db_offset = -88
         # all_sensors = True
 
         #--> only available sensors between january and february 2020, with 700 1min samples per day
@@ -523,8 +523,8 @@ def main(config):
         # n_files = 22660
         # time_start = '202071'
         # time_end = '202091'
-        # # db_compensation = -94+40
-        # db_compensation = -94+32
+        # # db_offset = -94+40
+        # db_offset = -88
         # all_sensors = True
 
         ##############################
@@ -532,7 +532,7 @@ def main(config):
         n_files = 195968
         time_start = "202171"
         time_end = "202181"
-        db_compensation = -94+32
+        db_offset = -88
         all_sensors = True
 
         ####################
@@ -540,12 +540,12 @@ def main(config):
         # n_files = 4860
         # time_start = '2021621'
         # time_end = '2021622'
-        # # db_compensation = -94+40
-        # db_compensation = -94+32
+        # # db_offset = -94+40
+        # db_offset = -88
         # all_sensors = True
 
-        # _, _, df_bf = get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=None, keep_only_tvb=False)
-        _, _, df_bf = get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=["p0220", "p0240", "p0200", "p0010", "p0100"], keep_only_tvb=False, pred_path=config.pred_path)
+        # _, _, df_bf = get_df(n_files, time_start, time_end, db_offset, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=None, keep_only_tvb=False)
+        _, _, df_bf = get_df(n_files, time_start, time_end, db_offset, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=["p0220", "p0240", "p0200", "p0010", "p0100"], keep_only_tvb=False, pred_path=config.pred_path)
         df_bf = df_bf[df_bf["day_of_week"]=="Sunday"]
         df_bf[pann_class] = df_bf[pann_class] * 5
 
@@ -556,11 +556,11 @@ def main(config):
         n_files = 6675
         time_start = '202188'
         time_end = '202189'
-        # db_compensation = -94+40
-        db_compensation = -94+32
+        # db_offset = -94+40
+        db_offset = -88
         all_sensors = True
 
-        _, _, df_f = get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=["p0220", "p0240", "p0200", "p0010", "p0100"], keep_only_tvb=False, pred_path=config.pred_path)
+        _, _, df_f = get_df(n_files, time_start, time_end, db_offset, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=["p0220", "p0240", "p0200", "p0010", "p0100"], keep_only_tvb=False, pred_path=config.pred_path)
         df_f = df_f[df_f["day_of_week"]=="Sunday"]
         df_f[pann_class] = df_f[pann_class] * 5
 
@@ -591,27 +591,27 @@ def main(config):
         # n_files = 33443
         # time_start = '202011'
         # time_end = '202031'
-        # # db_compensation = -94+40
-        # db_compensation = -94+32
+        # # db_offset = -94+40
+        # db_offset = -88
         # all_sensors = True
 
         #--> only 3 sensors between january and february 2020, with 100 1min samples per day
         # n_files = 1432
         # time_start = '20191225'
         # time_end = '20191226'
-        # # db_compensation = -94+40
-        # db_compensation = -94+32
+        # # db_offset = -94+40
+        # db_offset = -88
         # all_sensors = True
 
         #on a time period where it is used
         n_files = 36195
         time_start = '202011'
         time_end = '202021'
-        # db_compensation = -94+40
-        db_compensation = -94+32
+        # db_offset = -94+40
+        db_offset = -88
         all_sensors = False
 
-        df_a, df_f, df = get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=["p0480"], keep_only_tvb=False, pred_path=config.pred_path)
+        df_a, df_f, df = get_df(n_files, time_start, time_end, db_offset, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=["p0480"], keep_only_tvb=False, pred_path=config.pred_path)
 
         df = df[df['id_sensor'] == 'p0480']
         df[pann_class] = df[pann_class] * 75
@@ -620,11 +620,11 @@ def main(config):
         n_files = 16456
         time_start = '2020101'
         time_end = '2020111'
-        # db_compensation = -94+40
-        db_compensation = -94+32
+        # db_offset = -94+40
+        db_offset = -88
         all_sensors = False
 
-        _, _, df_nu = get_df(n_files, time_start, time_end, db_compensation, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=["p0480"], keep_only_tvb=False, pred_path=config.pred_path)
+        _, _, df_nu = get_df(n_files, time_start, time_end, db_offset, all_sensors, tvb_classes=[t_class, v_class, b_class], sensors=["p0480"], keep_only_tvb=False, pred_path=config.pred_path)
 
         df_nu = df_nu[df_nu['id_sensor'] == 'p0480']
         df_nu[pann_class] = df_nu[pann_class] * 75

@@ -217,13 +217,13 @@ def step(setting, experiment):
             # load the normalization coefficient
             setting_str_normalization = doce.Setting(experiment.normalization, [setting.dataset], positional=False).identifier()
             normalization_name = setting_str_normalization+'_normalization.npy'
-            db_compensation = - np.load(experiment.path.normalization+normalization_name)
+            db_offset = - np.load(experiment.path.normalization+normalization_name)
 
     ############### LEVEL CALCULATION ###########################
     #the level plan generates the level in dB of each audio file. The reference for the dB calculation is set to the minimum value
     #in the dataset (this way the level is always greater than 0)
     if plan_name == 'level':
-            db_compensation_multiplier = 10**(db_compensation/10)
+            db_offset_multiplier = 10**(db_offset/10)
             melspec_layer = MelSpectrogram(
                             n_mels=128,
                             sample_rate=32000,
@@ -245,7 +245,7 @@ def step(setting, experiment):
                 for file in files:
                     f = os.path.join(subdir, file)
                     wav, sr = librosa.load(f, sr=32000)
-                    wav = wav * db_compensation_multiplier
+                    wav = wav * db_offset_multiplier
                     torchwav = torch.Tensor(wav).unsqueeze(0)
                     melspec = melspec_layer(torchwav)
                     melspec = 10 * torch.log10(melspec + 1e-10)
@@ -282,22 +282,22 @@ def step(setting, experiment):
     if plan_name in ['reference', 'deep', 'merged'] :
         #choose a classifier, and the its related informations
         if setting.classifier == 'YamNet':
-            classif_model = ysed(normalize=normalize, db_compensation=db_compensation)
+            classif_model = ysed(normalize=normalize, db_offset=db_offset)
         
         if setting.classifier == 'PANN':
-            classif_model = psed(constant_10s_audio=constant_10s_audio, normalize=normalize, db_compensation=db_compensation, verbose=True, pann_type=pann_type)
+            classif_model = psed(constant_10s_audio=constant_10s_audio, normalize=normalize, db_offset=db_offset, verbose=True, pann_type=pann_type)
 
         if setting.classifier == 'CNN-PINV-YamNet':
             classif_model = tysed(normalize=normalize)
         
         if setting.classifier == 'CNN-PINV-PANN':
-            classif_model = tpsed(constant_10s_audio=constant_10s_audio, normalize=normalize, verbose=True, db_compensation=db_compensation, pann_type=pann_type)
+            classif_model = tpsed(constant_10s_audio=constant_10s_audio, normalize=normalize, verbose=True, db_offset=db_offset, pann_type=pann_type)
 
         if setting.classifier == 'CNN-PINV-PANN-Slow':
-            classif_model = tpsed_slow(constant_10s_audio=constant_10s_audio, normalize=normalize, verbose=False, db_compensation=db_compensation)
+            classif_model = tpsed_slow(constant_10s_audio=constant_10s_audio, normalize=normalize, verbose=False, db_offset=db_offset)
 
         if setting.classifier == 'TFSD':
-            classif_model = tsed(db_compensation=db_compensation)
+            classif_model = tsed(db_offset=db_offset)
 
         if setting.classifier == 'felix':
             classif_model = fsed(dataset=setting.dataset)
