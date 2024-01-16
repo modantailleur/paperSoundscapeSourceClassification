@@ -145,20 +145,14 @@ class LevelEvaluater:
         
         eval_outputs = np.array([])
 
-        for (spectral_data, laeq) in tqdm_it:
+        for (spectral_data, _) in tqdm_it:
             spectral_data = spectral_data.type(self.dtype)
             spectral_data = spectral_data.to(device)
-            laeq = laeq.type(self.dtype)
-            laeq = laeq.to(device)
 
             puiss_spectral_data = 10**(spectral_data/10)
             sum_puiss_spectral_data = torch.sum(puiss_spectral_data, axis=-1)
             level_spectral_data = 10*torch.log10(sum_puiss_spectral_data)
             level_spectral_data = level_spectral_data.view(-1)
-
-            # presence = inference_tfsd(spectral_data=spectral_data, batch_size=480)
-            # presence[:, 0] = laeq
-            # presence = presence.mean(axis=0)
             
             if len(eval_outputs) != 0:
                 eval_outputs = torch.cat((eval_outputs, level_spectral_data), dim=0)
