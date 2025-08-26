@@ -1,4 +1,8 @@
-# paperSoundscapeSourceClassification
+# Sound source classification for soundscape analysis using fast third-octave bands data from an urban acoustic sensor network
+
+This repository contains code for the paper:
+
+Tailleur, M., Aumond, P., Lagrange, M., & Tourre, V. (2024). [Sound source classification for soundscape analysis using fast third-octave bands data from an urban acoustic sensor network](https://pubs.aip.org/asa/jasa/article-abstract/156/1/416/3303559/Sound-source-classification-for-soundscape?redirectedFrom=fulltext). The Journal of the Acoustical Society of America (JASA).
 
 ## SETUP
 
